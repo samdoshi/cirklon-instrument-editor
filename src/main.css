@@ -1,0 +1,62 @@
+body {
+    padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+}
+
+.container,
+.navbar-fixed-top .container {
+    width: 1020px;
+}
+
+#main {
+    /*background-color: pink;*/
+    width: 719px;
+    padding: 0px 5px 0px 0px;
+}
+
+#numbers {
+    /*background-color: #AAA;*/
+    float: left;
+    width: 27px;
+    min-height: 1792px;
+    list-style-type: none;
+    padding: 5px;
+    margin: 0px;
+}
+
+#numbers li {
+    width: 15px;
+    height: 70px;
+    float: left;
+    margin: 5px;
+    padding: 6px;
+    font-size: 15px;
+    line-height: 70px;
+    text-align: right;
+}
+
+#controls {
+    /*background-color: #AAA;*/
+    float: left;
+    width: 562px;
+    min-height: 1792px;
+    list-style-type: none;
+    padding: 5px;
+    margin: 0px;
+}
+
+.control {
+    /*background-color: #DDD;*/
+    cursor: move;
+    width: 70px;
+    height: 70px;
+    float: left;
+    margin: 5px;
+    padding: 5px;
+    /*border: 1px solid #888;
+    border-radius: 5px;*/
+}
+
+#settings {
+    /*background-color: orange;*/
+    float: left;
+}

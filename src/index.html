@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <title>Cirklon Instrument Editor</title>
+    
+    <link rel="stylesheet" type="text/css" href="lib/bootstrap.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="main.css" media="screen">
+
+    <script type="text/javascript" src="lib/jquery-1.8.2.js"></script>
+    <script type="text/javascript" src="lib/jquery-ui-1.8.23.custom.min.js"></script>
+    <script type="text/javascript" src="lib/knockout-2.2.0.debug.js"></script>
+    <script type="text/javascript" src="lib/bootstrap-2.2.1.js"></script>
+    <script type="text/javascript" src="lib/FileSaver.js"></script>
+
+    <script type="text/javascript" src="app.js"></script>
+</head>
+<body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <span class="brand">Cirklon Instrument Editor</span>
+                <form class="navbar-form pull-right">
+                    <button type="button" class="btn btn-primary" onclick="$('#upload').click();">Import .CKI</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="main" class="">
+            <ul id="numbers"></ul>
+            <ul id="controls" data-bind="foreach: controls">
+                <li class="control btn" data-bind="css: { 'btn-inverse': $root.selectedControl() != $data,
+                                                          'btn-primary': $root.selectedControl() == $data }">
+                    <div>
+                        <span data-bind="visible: displayName, text: displayName"></span><br>
+                        <span data-bind="text: displayAction"></span><br>
+                        <button type="button" class="btn btn-primary btn-mini" 
+                            data-bind="fadeVisible: !$root.editControl(), click: $root.edit">Edit</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div id="settings"><div data-spy="affix" data-offset-top="0">
+            <form class="form-horizontal" data-bind="visible: !$root.editControl()">
+                <fieldset>
+                    <legend>Instrument settings</legend>
+                    <div class="control-group" data-bind="css: { error: !isNameValid() }">
+                        <label class="control-label">Name</label>
+                        <div class="controls">
+                            <input type="text" placeholder="name" maxlength="9" data-bind="value: name, valueUpdate: 'keyup'">
+                        </div>
+                    </div>
+                    <div class="control-group" data-bind="css: { error: !isMidiPortValid() }">
+                        <label class="control-label">MIDI port</label>
+                        <div class="controls">
+                            <input type="number" min="1" max="5" class="input-mini" placeholder="no." data-bind="value: midiPort, valueUpdate: 'keyup'">
+                        </div>
+                    </div>
+                    <div class="control-group" data-bind="css: { error: !isMidiChannelValid() }">
+                        <label class="control-label">MIDI channel</label>
+                        <div class="controls">
+                            <input type="number" min="1" max="16" class="input-mini" placeholder="no." data-bind="value: midiChannel, valueUpdate: 'keyup'">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="controls">
+                            <label class="checkbox">
+                                <input type="checkbox" data-bind="checked: multi"> Multi
+
+                            </label>
+                            <button type="button" data-bind="click: exportInstrument, enable: isValid" class="btn btn-primary">Export</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+
+            <form class="form-horizontal" data-bind="with: $root.editControl, fadeVisible: $root.editControl">
+                <fieldset>
+                    <legend>Edit control</legend>
+                    <div class="control-group">
+                        <label class="control-label">Type</label>
+                        <div class="controls">
+                            <select data-bind="options: $root.controlOptions, value: option"></select>
+                        </div>
+                    </div>
+                    <div data-bind="visible: option() == 'MIDI CC'">
+                        <div class="control-group" data-bind="css: { error: !isNameValid() }">
+                            <label class="control-label">Name</label>
+                            <div class="controls">
+                                <input type="text" maxlength="6" placeholder="name" data-bind="value: name, valueUpdate: 'keyup'">
+                            </div>
+                        </div>
+                        <div class="control-group" data-bind="css: { error: !isCCValid() }">
+                            <label class="control-label">MIDI CC</label>
+                            <div class="controls">
+                                <input type="number" min="0" max="127" placeholder="midi cc" data-bind="value: cc, valueUpdate: 'keyup'">
+                            </div>
+                        </div>
+                    </div>
+                    <div data-bind="visible: option() == 'Track CTRL'"> 
+                        <div class="control-group">
+                            <label class="control-label">Track CTRL</label>
+                            <div class="controls">
+                                <select data-bind="options: $root.trackValues, value: trackValue"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="controls">
+                            <button class="btn" type="button" data-bind="click: $root.cancel">Cancel</button>
+                            <button class="btn btn-primary" type="button" data-bind="click: $root.save, enable: isValid">Submit</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+
+        </div></div>
+    </div>
+
+    <div id="importModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="importModelLabel" aria-hidden="true">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h3 id="importModelLabel">Import .CKI</h3>
+        </div>
+        <div class="modal-body">
+            <form id="uploadForm" class="form-horizontal" data-bind="visible: instruments().length > 0">
+                <input id="upload" type="file" data-bind="event: { change: upload }" style="display:none">
+                <div class="control-group">
+                    <label class="control-label">Instrument</label>
+                    <div class="controls">
+                        <select data-bind="options: instruments, value: selectedInstrument"></select>
+                    </div>                            
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button data-dismiss="modal" aria-hidden="true" class="btn">Cancel</button>
+            <button data-dismiss="modal" aria-hidden="true" data-bind="click: importInstrument" class="btn btn-primary">Import</button>
+        </div>
+    </div>
+
+    <div id="browserWarningModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="browserWarningModalLabel" aria-hidden="true">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="browserWarningModalLabel">Unsupported Browser</h3>
+        </div>
+        <div class="modal-body">
+            <p>Sorry, the only browsers that are currently supported are 
+            <a href="http://www.google.com/chrome">Chrome</a> and <a href="http://www.mozilla.org">Firefox</a>.</p>
+            <p>If you wish, you may close this box and use the editor, but beware, exporting is unlikely to work.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-34737250-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+
+    </script>
+</body>
+</html>
+
